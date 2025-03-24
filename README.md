@@ -34,10 +34,92 @@ If this dataset is usefule in your projects, we will apprecite your star on this
 :honeybee: [MoMask](https://ericguo5513.github.io/momask/) - New-level text2motion generation using residual VQ and generative masked modeling.
 
 ## How to Obtain the Data
-For KIT-ML dataset, you could directly download [[Here]](https://drive.google.com/drive/folders/1D3bf2G2o4Hv-Ale26YW18r1Wrh7oIAwK?usp=sharing). Due to the distribution policy of AMASS dataset, we are not allowed to distribute the data directly. We provide a series of script that could reproduce our HumanML3D dataset from AMASS dataset. 
+For the KIT-ML dataset, you can download it directly [[Here]](https://drive.google.com/drive/folders/1D3bf2G2o4Hv-Ale26YW18r1Wrh7oIAwK?usp=sharing). For the HumanML3D dataset, due to AMASS distribution policies, we cannot share it directly. Instead, we provide scripts to reproduce HumanML3D from AMASS, including the KIT portion. Below are simplified steps to download KIT from AMASS and process it.
 
-You need to clone this repository and install the virtual environment.
+You’ll need to clone this repository and set up the virtual environment first (see "Python Virtual Environment" above).
 
+##### Step 1: Download KIT from AMASS
+1. **Register and Access AMASS**:
+   - Go to [https://amass.is.tue.mpg.de/](https://amass.is.tue.mpg.de/).
+   - Sign up or log in to access the "Downloads" page.
+2. **Download KIT Sub-Dataset**:
+   - On the Downloads page, locate the **KIT** dataset under "SMPL+H G" format (e.g., `KIT.tar.bz2`).
+   - Download it to your local machine (file size is ~1-2 GB).
+3. **Unzip and Organize**:
+   - Extract the file:
+     ```sh
+     tar -xjf KIT.tar.bz2 -C /mnt/DATA/Phongsiri/HumanML3D/amass_data/
+     ```
+   - Ensure the structure matches:
+     ```
+     /mnt/DATA/Phongsiri/HumanML3D/amass_data/KIT/
+     ├── 3/
+     │   ├── kick_high_left02.npz
+     │   └── ... (other .npz files)
+     └── ... (other KIT subfolders)
+     ```
+   - If the folder name differs (e.g., `KIT_Motion`), rename it to `KIT`:
+     ```sh
+     mv /mnt/DATA/Phongsiri/HumanML3D/amass_data/KIT_Motion /mnt/DATA/Phongsiri/HumanML3D/amass_data/KIT
+     ```
+
+##### Step 2: Download SMPL+H and DMPL Models
+1. **SMPL+H**:
+   - Visit [https://mano.is.tue.mpg.de/download.php](https://mano.is.tue.mpg.de/download.php), register, and download the "Extended SMPL+H model used in AMASS project" (e.g., `SMPLH_{gender}.tar.xz` for male, female, neutral).
+   - Extract and place under `./body_model/smplh/`:
+     ```sh
+     tar -xJf SMPLH_MALE.tar.xz -C /mnt/DATA/Phongsiri/HumanML3D/body_model/smplh/male/
+     tar -xJf SMPLH_FEMALE.tar.xz -C /mnt/DATA/Phongsiri/HumanML3D/body_model/smplh/female/
+     ```
+2. **DMPL**:
+   - Visit [https://smpl.is.tue.mpg.de/download.php](https://smpl.is.tue.mpg.de/download.php), register, and download "DMPLs compatible with SMPL" (e.g., `dmpls_{gender}.tar.xz`).
+   - Extract and place under `./body_model/dmpls/`:
+     ```sh
+     tar -xJf dmpls_male.tar.xz -C /mnt/DATA/Phongsiri/HumanML3D/body_model/dmpls/male/
+     tar -xJf dmpls_female.tar.xz -C /mnt/DATA/Phongsiri/HumanML3D/body_model/dmpls/female/
+     ```
+   - Final structure:
+     ```
+     /mnt/DATA/Phongsiri/HumanML3D/body_model/
+     ├── smplh/
+     │   ├── male/model.npz
+     │   ├── female/model.npz
+     │   └── neutral/model.npz
+     ├── dmpls/
+     │   ├── male/model.npz
+     │   └── female/model.npz
+     ```
+
+##### Step 3: Convert KIT .npz to .npy
+1. **Run the Extraction Script**:
+   - Open `raw_pose_processing.ipynb` in Jupyter:
+     ```sh
+     cd /mnt/DATA/Phongsiri/HumanML3D
+     jupyter notebook raw_pose_processing.ipynb
+     ```
+   - Execute all cells in the "Extract Poses from AMASS Dataset" section.
+   - This reads `.npz` files from `./amass_data/KIT/` (e.g., `kick_high_left02.npz`), processes them using SMPL+H models, and saves `.npy` files to `./pose_data/KIT/` (e.g., `kick_high_left02_poses.npy`).
+2. **Verify Output**:
+   - Check that `.npy` files appear:
+     ```sh
+     ls /mnt/DATA/Phongsiri/HumanML3D/pose_data/KIT/3/*.npy
+     ```
+
+##### Step 4: Process into HumanML3D Format
+1. **Segment and Mirror**:
+   - In `raw_pose_processing.ipynb`, run the "Segment, Mirror and Relocate Motions" section.
+   - This uses `./index.csv` to process `.npy` files from `./pose_data/` into `./new_joint_vecs/` (e.g., `000000.npy`, `M000000.npy` for mirrored versions).
+2. **Complete Remaining Steps**:
+   - Run `motion_representation.ipynb` and `cal_mean_variance.ipynb` to generate additional features and statistics (`Mean.npy`, `Std.npy`).
+   - (Optional) Run `animation.ipynb` for visualizations.
+
+##### Final Check
+- Your HumanML3D KIT data should now be in `./new_joint_vecs/`. Move it to the main dataset folder if needed:
+  ```sh
+  mv /mnt/DATA/Phongsiri/HumanML3D/new_joint_vecs/* /mnt/DATA/Phongsiri/HumanML3D/HumanML3D/new_joint_vecs/
+  ```
+
+This process ensures KIT from AMASS is correctly integrated into HumanML3D. For the full dataset, repeat for other AMASS sub-datasets (e.g., CMU, SFU).
 <!-- ### [2021/01/12] Updates: add evaluation related files & scripts   -->
 
 **[2022/12/15] Update**: Installing matplotlib=3.3.4 could prevent small deviation of the generated data from reference data. See [Issue](https://github.com/EricGuo5513/HumanML3D/issues/21#issue-1498109924)
